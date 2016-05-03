@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:background="#f0f0f0"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:paddingLeft="2dp"
+    android:paddingRight="2dp"
+    android:layout_height="wrap_content" >
+    
+    
+     <RelativeLayout
+        android:id="@+id/rl_bottom"
+        android:layout_width="match_parent"
+        android:layout_centerVertical="true"
+        android:layout_height="46dp"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
+        android:background="@drawable/board_list_content_bg" >
+
+        <ImageView
+            android:id="@+id/iv_last_page"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:src="@drawable/last_page_selector" />
+
+        <TextView
+            android:id="@+id/tv_cur_page"
+            android:layout_width="wrap_content"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="第3页" />
+
+        <ImageView
+            android:id="@+id/iv_next_page"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/next_page_selector" />
+    </RelativeLayout>
+
+</RelativeLayout>
