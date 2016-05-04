@@ -1,6 +1,8 @@
 package com.itheima.datastorage.hotel;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -8,7 +10,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
 import com.android.volley.AuthFailureError;
@@ -17,14 +18,13 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import com.itheima.datastorage.R;
-import com.itheima.datastorage.data.DataCenter;
+import com.itheima.datastorage.util.DataCenter;
 import com.itheima.datastorage.model.Hotel;
-import com.itheima.datastorage.ui.OnDataResponseLisener;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class HotelListActivity extends Activity implements View.OnClickListener, OnDataResponseLisener, Response.ErrorListener {
+public class HotelListActivity extends Activity implements View.OnClickListener, Response.Listener<String>, Response.ErrorListener {
 
     private ListView mListView;
     private List<Hotel> hotelList;
@@ -39,6 +39,7 @@ public class HotelListActivity extends Activity implements View.OnClickListener,
     private TextView mTvCurPage;//当前页码
     private ProgressBar mProgressBar;
     private final static int PAGE_SIZE = 10;//每页10条数据
+    private AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,12 +60,8 @@ public class HotelListActivity extends Activity implements View.OnClickListener,
     }
 
     private void initData() {
-        url = "http://192.168.0.107:8080/VolleyTest/HotelList";
         queue = Volley.newRequestQueue(this);
-
-//        getHotelListData();
-
-        DataCenter.getInstance(this).getHotelList(reqFlag, pagenum, queue,this, this);
+        DataCenter.getInstance(this).getHotelList(reqFlag, pagenum, queue, this, this);
 
     }
 
@@ -124,7 +121,7 @@ public class HotelListActivity extends Activity implements View.OnClickListener,
 
 
     @Override
-    public void onResponse(int respCode,String result) {
+    public void onResponse(String result) {
         showLog(result);
 
         List<Hotel> hotels = JSON.parseArray(result, Hotel.class);
@@ -133,9 +130,6 @@ public class HotelListActivity extends Activity implements View.OnClickListener,
             hotelList.addAll(hotels);
             mAdapter.notifyDataSetChanged();
             mTvCurPage.setText("第" + pagenum + "页");
-            if(respCode == DataCenter.RESP_CODE_INTERNET){
-                DataCenter.getInstance(this).saveJsonString(pagenum, result);
-            }
         }
         hideProgressBar();
 
@@ -154,8 +148,20 @@ public class HotelListActivity extends Activity implements View.OnClickListener,
     @Override
     public void onErrorResponse(VolleyError error) {
         hideProgressBar();
-        Toast.makeText(HotelListActivity.this, "网络异常，查看MyEclipse服务器是否开启或访问地址是否正确", Toast.LENGTH_SHORT).show();
         showLog(error.getMessage());
+        if(dialog == null){
+            dialog = new AlertDialog.Builder(this)
+                    .setTitle("网络异常!")
+                    .setMessage("请检查MyEclipse服务器是否开启，或访问地址是否正确。若未下载服务器代码，请下载：https://github.com/jiyouliang/VolleyTest")
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .create();
+        }
+        dialog.show();
     }
 
     private void showLog(String msg){
@@ -165,7 +171,8 @@ public class HotelListActivity extends Activity implements View.OnClickListener,
     @Override
     public void finish() {
         queue.cancelAll(reqFlag);//页面消失，取消发送
-        DataCenter.getInstance(this).deleteAll();
+        DataCenter.getInstance(this).deleteAll();//fisnish页面删除数据库所有缓存（很多公司第一次进入某个模块，都需要重新从网络获取最新数据，不是从缓冲读取，这个需求参考的是淘宝和高德地图）
+        if(dialog != null && dialog.isShowing()) dialog.dismiss();
         super.finish();
     }
 
