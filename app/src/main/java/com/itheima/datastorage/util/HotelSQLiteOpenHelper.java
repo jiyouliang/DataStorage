@@ -5,23 +5,24 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 /**
- * Created by youliang.ji on 2016/5/1.
+ * Created by youliang.ji on 2016/5/23.
  */
 public class HotelSQLiteOpenHelper extends SQLiteOpenHelper {
+    public final static String HOTEL_TABLE = "hotel_list";
 
     public HotelSQLiteOpenHelper(Context context) {
-        super(context, "hotel.db", null, 1);//酒店数据
+        super(context, "heima.db", null, 1);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        //创建酒店列表数据表
-        db.execSQL("CREATE TABLE hotel_list(id INTEGER PRIMARY KEY AUTOINCREMENT, pagenum INTEGER, data VARCHAR(20))");
+        db.execSQL("CREATE TABLE "+HOTEL_TABLE+"(id INTEGER PRIMARY KEY AUTOINCREMENT,pagenum INTEGER,data VARCHAR(20),time VARCHAR(20))");
     }
-
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
+
+
 }

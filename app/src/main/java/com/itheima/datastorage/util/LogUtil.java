@@ -10,8 +10,6 @@ public class LogUtil {
     private static final  String TAG = "result";
 
     public static void d(String msg){
-        Log.d(TAG, "//********************************************/");
         Log.d(TAG, msg);
-        Log.d(TAG, "//********************************************/");
     }
 }
