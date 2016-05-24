@@ -11,8 +11,9 @@
 ### 3.使用技术
 
 * 1.Lrucache处理内存存储
-* 2.UniversalImageLoader加载图片
-* 3.Sqllite存储缓存处理
+* 2.Volley请求网络
+* 3.UniversalImageLoader加载图片
+* 4.Sqllite存储缓存处理
 
 ### 4.Usage
 
