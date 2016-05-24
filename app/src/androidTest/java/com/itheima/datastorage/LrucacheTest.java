@@ -1,8 +1,11 @@
 package com.itheima.datastorage;
 
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.util.LruCache;
 
+import com.itheima.datastorage.util.HotelSQLiteOpenHelper;
 import com.itheima.datastorage.util.LogUtil;
 
 import java.util.Map;
@@ -49,5 +52,32 @@ public class LrucacheTest extends ApplicationTest {
             LogUtil.d("key="+entry.getKey()+",value="+entry.getValue());
         }
         LogUtil.d("==========打印结束==========");
+    }
+
+    public void test2(){
+        String value1 = "1464054613534";
+        String value2 = "1464054629950";
+
+
+    }
+
+    /**
+     *测试数据库排序
+     */
+    public void test4(){
+        HotelSQLiteOpenHelper sqLiteOpenHelper = new HotelSQLiteOpenHelper(getContext());
+        SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
+        if(db != null){
+            Cursor cursor = db.query(HotelSQLiteOpenHelper.HOTEL_TABLE, new String[]{"pagenum"}, null, null, null, null, "time ASC");
+            if(cursor != null){
+                if (cursor.moveToFirst()){
+                    int pagenum = cursor.getInt(0);
+                    LogUtil.d("pagenum="+pagenum);
+                }
+                cursor.close();
+            }
+            db.close();
+        }
+
     }
 }

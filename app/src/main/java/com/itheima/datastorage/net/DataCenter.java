@@ -15,6 +15,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.itheima.datastorage.util.HotelSQLiteOpenHelper;
 import com.itheima.datastorage.util.LogUtil;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -30,6 +31,10 @@ public class DataCenter {
     private HotelSQLiteOpenHelper sqLiteOpenHelper;
     private String cacheData;
     private MyHandler handler;
+    /**内存最大存储*/
+    private final static int MAX_SIZE_MEMORY = 3 * 1024;//3KB，正式开发肯定没这么小，这里为了测试
+    /**缓存最大存储*/
+    private final static int MAX_SIZE_CACHE = 30 * 1024;//30KB，正式开发肯定没这么小，这里为了测试
 
     private DataCenter() {
     }
@@ -59,6 +64,7 @@ public class DataCenter {
             listener.onResponse(getFromMemory(pagenum));
             return;
         } else if(exitInCache(pagenum)){
+            showToast("从缓存中获取第"+pagenum+"页数据");
             LogUtil.d("缓冲中存在第页"+pagenum+"数据:"+cacheData);
             listener.onResponse(cacheData);
             return;
@@ -102,7 +108,6 @@ public class DataCenter {
             memoryCache = new MemoryLrucache();
         }
         LogUtil.d("将第" + pagenum + "页数据存储到内存");
-        showToast("将第" + pagenum + "页数据存储到内存");
         memoryCache.put(pagenum + "", data);
         printMemoryData();
     }
@@ -118,26 +123,23 @@ public class DataCenter {
     private boolean exitInMemory(int pagenum) {
         if (memoryCache == null) {
             LogUtil.d("内存中不存在第" + pagenum + "页数据");
-            showToast("内存中不存在第" + pagenum + "页数据");
             return false;
         }
         String data = memoryCache.get(pagenum + "");
         boolean exit = !TextUtils.isEmpty(data);
         if (exit) {
             LogUtil.d("内存中存在第" + pagenum + "页数据");
-            showToast("内存中存在第" + pagenum + "页数据");
         } else {
             LogUtil.d("内存中不存在第" + pagenum + "页数据");
-            showToast("内存中不存在第" + pagenum + "页数据");
         }
         return exit;
     }
 
     class MemoryLrucache extends LruCache<String, String> {
-        private final static int MAX_SIZE = 3 * 1024;
+
 
         public MemoryLrucache() {
-            super(MAX_SIZE);
+            super(MAX_SIZE_MEMORY);
         }
 
         @Override
@@ -168,16 +170,21 @@ public class DataCenter {
         if (sqLiteOpenHelper == null) {
             sqLiteOpenHelper = new HotelSQLiteOpenHelper(context);
         }
+
         SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("pagenum", pagenum);
         contentValues.put("data", data);
-        contentValues.put("time", System.currentTimeMillis()+"");
+        contentValues.put("time", System.currentTimeMillis() + "");
         db.insert(HotelSQLiteOpenHelper.HOTEL_TABLE, null, contentValues);
 
         LogUtil.d("将第" + pagenum + "页数据存储到缓存中");
-        showToast("将第" + pagenum + "页数据存储到缓存中");
         db.close();
+
+        while (!canCache()){//如果没有足够空间缓冲，先删除数据，指导空间足够
+            LogUtil.d("没有足够空间存储数据");
+            deleteLruCache();
+        }
     }
 
     private boolean exitInCache(int pagenum) {
@@ -200,7 +207,6 @@ public class DataCenter {
         db.close();
         if(!exitInCache) {
             LogUtil.d("缓冲中不存在第页"+pagenum+"数据");
-            showToast("缓冲中不存在第页"+pagenum+"数据");
         }
         return exitInCache;
     }
@@ -215,6 +221,7 @@ public class DataCenter {
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     public void deleteAllData(){
@@ -236,6 +243,69 @@ public class DataCenter {
         LogUtil.d("删除内存中的数据");
         showToast("删除内存数据");
         memoryCache = null;
+    }
+
+    /**
+     * 删除最近最少使用的数据
+     */
+    private void deleteLruCache(){
+        int pagenum = getDeleteCacheIndex();
+        LogUtil.d("需要删除第"+pagenum+"页数据");
+        if(pagenum > 0){
+            SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
+            if(db != null){
+                int index = db.delete(HotelSQLiteOpenHelper.HOTEL_TABLE, "pagenum=?", new String[]{pagenum + ""});
+                LogUtil.d("删除，index="+index);
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * 获取需要删除的页码
+     * @return
+     */
+    private int getDeleteCacheIndex(){
+        int pagenum = -1;
+        SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
+        if(db != null){
+            Cursor cursor = db.query(HotelSQLiteOpenHelper.HOTEL_TABLE, new String[]{"pagenum"}, null, null, null, null, "time ASC");
+            if(cursor != null){
+                if (cursor.moveToFirst()){
+                   pagenum = cursor.getInt(0);
+                    LogUtil.d("需要删除页码pagenum="+pagenum);
+                }
+                cursor.close();
+            }
+            db.close();
+        }
+        return pagenum;
+    }
+
+
+    /**
+     * 是否还有空间存储到数据库
+     * @return
+     */
+    private boolean canCache(){
+        long size = getCacheSize();
+        return (size <= MAX_SIZE_CACHE);
+    }
+
+    /**
+     * 获取缓存数据库大小
+     * @return
+     */
+    private long getCacheSize(){
+        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
+        String path = db.getPath();
+        File file = null;
+        if(path != null){
+            file = new File(path);
+        }
+        db.close();
+        LogUtil.d("获取数据库文件大小："+file.length());
+        return file.length();//byte
     }
 
     /**

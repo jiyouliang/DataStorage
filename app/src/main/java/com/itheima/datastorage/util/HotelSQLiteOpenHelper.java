@@ -24,5 +24,12 @@ public class HotelSQLiteOpenHelper extends SQLiteOpenHelper {
 
     }
 
+    /**
+     * 删除Least recently unused数据
+     */
+    public void deleteLruData(){
+
+    }
+
 
 }
