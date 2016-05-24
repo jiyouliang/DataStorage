@@ -25,7 +25,7 @@ public class DataCenter {
 
     private static DataCenter instance;
     private Context context;
-    private final static String url = "http://192.168.0.111:8080/VolleyTest/HotelList";
+    private final static String url = "http://192.168.0.104:8080/VolleyTest/HotelList";
     private MemoryLrucache memoryCache;
     private HotelSQLiteOpenHelper sqLiteOpenHelper;
     private String cacheData;
